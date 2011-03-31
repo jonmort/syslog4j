@@ -10,6 +10,9 @@ import com.sun.jna.Library;
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
 * UnixSyslog is an extension of AbstractSyslog that provides support for
 * Unix-based syslog clients.

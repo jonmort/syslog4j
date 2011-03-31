@@ -1,5 +1,5 @@
 *.iml
 *.ipr
 *.iws
-out/
+target/
 *.class
