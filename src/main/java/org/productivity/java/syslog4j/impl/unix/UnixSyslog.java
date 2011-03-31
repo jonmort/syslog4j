@@ -42,6 +42,7 @@ public class UnixSyslog extends AbstractSyslog {
     protected static boolean openlogCalled = false;
 	
     protected static CLibrary libraryInstance = null;
+    protected static Map identMap = new HashMap();
 
 	protected static synchronized void loadLibrary(UnixSyslogConfig config) throws SyslogRuntimeException {
 		if (!OSDetectUtility.isUnix()) {
@@ -82,11 +83,12 @@ public class UnixSyslog extends AbstractSyslog {
 					ident = null;
 				}
 				
-				Memory identBuffer = null;
+				Memory identBuffer = ident == null ? null : (Memory) identMap.get(ident);
 
-				if (ident != null) {
+				if (ident != null && identBuffer == null) {
 					identBuffer = new Memory(128);
 					identBuffer.setString(0, ident, false);
+                    identMap.put(ident, identBuffer);
 				}
 				
 				libraryInstance.openlog(identBuffer,config.getOption(),currentFacility);
