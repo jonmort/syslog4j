@@ -35,18 +35,12 @@ public class StructuredSyslogServerEvent extends SyslogServerEvent {
 	protected DateTime dateTime = null;
 	protected DateTimeFormatter dateTimeFormatter = null;
 	
-	public StructuredSyslogServerEvent(final byte[] message, int length, InetAddress inetAddress) {
-		super();
-		
-		initialize(message,length,inetAddress);
-		parse();
-	}
-
 	public StructuredSyslogServerEvent(final String message, InetAddress inetAddress) {
 		super();
-		
-		initialize(message,inetAddress);
-		parse();
+	}
+	
+	public StructuredSyslogServerEvent(final byte[] message, int length, InetAddress inetAddress) {
+		super();
 	}
 
 	public DateTimeFormatter getDateTimeFormatter() {
@@ -88,7 +82,8 @@ public class StructuredSyslogServerEvent extends SyslogServerEvent {
 		}
 	}
 
-	protected void parseDate() {
+	// override parseAndStripDate() from super class
+	protected void parseAndStripDate() {
 		// skip VERSION field
 		int i = this.message.indexOf(' ');
 		this.message = this.message.substring(i + 1);
@@ -109,20 +104,16 @@ public class StructuredSyslogServerEvent extends SyslogServerEvent {
 				
 			} catch (Exception e) {
 				// Not structured date format, try super one
-				super.parseDate();
+				super.parseAndStripDate();
 			} 
 		}
 	}
-
-	protected void parseHost() {
-		int i = this.message.indexOf(' ');
+	
+	// over parse() from super class
+	protected void parse() {
+		super.parse();
 		
-		if (i > -1) {
-			this.host = this.message.substring(0,i).trim();
-			this.message = this.message.substring(i+1);
-			
-			parseApplicationName();
-		}	
+		parseApplicationName();
 	}
 
 	public String getApplicationName() {
