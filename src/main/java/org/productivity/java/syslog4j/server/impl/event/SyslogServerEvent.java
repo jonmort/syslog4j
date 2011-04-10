@@ -6,6 +6,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.productivity.java.syslog4j.SyslogConstants;
 import org.productivity.java.syslog4j.server.SyslogServerEventIF;
@@ -25,6 +27,7 @@ public class SyslogServerEvent implements SyslogServerEventIF {
 	private static final long serialVersionUID = 6136043067089899962L;
 	
 	public static final String DATE_FORMAT = "MMM dd HH:mm:ss yyyy";
+	private static Pattern hostNamePattern = Pattern.compile("((\\w|[.-])+)(\\s+(.*))?$"); // A word character: [a-zA-Z_0-9] and . -
 	
 	protected String charSet = SyslogConstants.CHAR_SET_DEFAULT;
 	protected String rawString = null;
@@ -66,56 +69,28 @@ public class SyslogServerEvent implements SyslogServerEventIF {
 		parse();
 	}
 
-	protected void parseHost() {
-		int i = this.message.indexOf(' ');
+	protected void parseAndStripHost() {
+		this.host = this.inetAddress.getHostAddress();
 		
-		if (i > -1) {
-			String hostAddress = null;
-			String hostName = null;
-			
-			String providedHost = this.message.substring(0,i).trim();
-	
-			hostAddress = this.inetAddress.getHostAddress();
-				
-			if (providedHost.equalsIgnoreCase(hostAddress)) {
-				this.host = hostAddress;
-				this.message = this.message.substring(i+1);
-				isHostStrippedFromMessage = true;
-			}
-
-			if (this.host == null) {
-				hostName = this.inetAddress.getHostName();
-				
-				if (!hostName.equalsIgnoreCase(hostAddress)) {
-					if (providedHost.equalsIgnoreCase(hostName)) {
-						this.host = hostName;
-						this.message = this.message.substring(i+1);
-						isHostStrippedFromMessage = true;
-					}
-					
-					if (this.host == null) {
-						int j = hostName.indexOf('.');
-						
-						if (j > -1) {
-							hostName = hostName.substring(0,j);
-						}
+		if (this.message.length() == 0) 
+			return;
 		
-						if (providedHost.equalsIgnoreCase(hostName)) {
-							this.host = hostName;
-							this.message = this.message.substring(i+1);
-							isHostStrippedFromMessage = true;
-						}
-					}
-				}
-			}
-				
-			if (this.host == null) {
-				this.host = (hostName != null) ? hostName : hostAddress;
-			}			
-		}
+		Matcher m = SyslogServerEvent.hostNamePattern.matcher(this.message);
+		if(!m.find() || m.groupCount() < 1)
+			return;
+		
+		this.host = m.group(1);
+		
+		// strip host from message
+		if(this.message.length() <= this.host.length() + 1)
+			this.message = "";
+		else
+			this.message = this.message.substring(this.host.length() + 1);
+		
+		isHostStrippedFromMessage = true;
 	}
 
-	protected void parseDate() {
+	protected void parseAndStripDate() {
 		if (this.message.length() >= 16 && this.message.charAt(3) == ' ' && this.message.charAt(6) == ' ') {
 			String year = Integer.toString(Calendar.getInstance().get(Calendar.YEAR));
 			
@@ -133,7 +108,7 @@ public class SyslogServerEvent implements SyslogServerEventIF {
 		}
 	}
 	
-	protected void parsePriority() {
+	protected void parseAndStripPriority() {
 		if (this.message.charAt(0) == '<') {
 			int i = this.message.indexOf(">"); 
 			
@@ -158,11 +133,13 @@ public class SyslogServerEvent implements SyslogServerEventIF {
 	protected void parse() {
 		if (this.message == null) {
 			this.message = SyslogUtility.newString(this,this.rawBytes,this.rawLength);
+			this.rawString = this.message;
 		}
 		
-		parseHost();
-		parseDate();
-		parsePriority();
+		// parse and strip each component of a message, order of call is essential
+		parseAndStripPriority();
+		parseAndStripDate();
+		parseAndStripHost();
 	}
 	
 	public int getFacility() {
