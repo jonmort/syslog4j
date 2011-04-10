@@ -42,14 +42,10 @@ public class SyslogServerEvent implements SyslogServerEventIF {
 	
 	public SyslogServerEvent(final String message, InetAddress inetAddress) {
 		initialize(message,inetAddress);
-		
-		parse();
 	}
 	
 	public SyslogServerEvent(final byte[] message, int length, InetAddress inetAddress) {
 		initialize(message,length,inetAddress);
-		
-		parse();
 	}
 	
 	protected void initialize(final String message, InetAddress inetAddress) {
@@ -58,12 +54,16 @@ public class SyslogServerEvent implements SyslogServerEventIF {
 		this.inetAddress = inetAddress;
 		
 		this.message = message;
+		
+		parse();
 	}
 
 	protected void initialize(final byte[] message, int length, InetAddress inetAddress) {
 		this.rawBytes = message;
 		this.rawLength = length;
 		this.inetAddress = inetAddress;
+		
+		parse();
 	}
 
 	protected void parseHost() {
@@ -131,8 +131,6 @@ public class SyslogServerEvent implements SyslogServerEventIF {
 				this.date = new Date();
 			}
 		}
-		
-		parseHost();
 	}
 	
 	protected void parsePriority() {
@@ -150,13 +148,9 @@ public class SyslogServerEvent implements SyslogServerEventIF {
 					
 					this.message = this.message.substring(i+1);
 					
-					parseDate();
-					
 				} catch (NumberFormatException nfe) {
 					//
 				}
-				
-				parseHost();
 			}
 		}
 	}
@@ -166,6 +160,8 @@ public class SyslogServerEvent implements SyslogServerEventIF {
 			this.message = SyslogUtility.newString(this,this.rawBytes,this.rawLength);
 		}
 		
+		parseHost();
+		parseDate();
 		parsePriority();
 	}
 	
